@@ -1,30 +1,34 @@
 import { useNow } from "@vueuse/core";
 import { formatDuration } from "date-fns";
 import { groupBy } from "jaz-ts-utils";
-import { computed, ComputedRef, reactive, shallowReactive, watch, WatchStopHandle } from "vue";
+import { TachyonUser } from "tachyon-client/node_modules/tachyon-protocol";
+import { computed, ComputedRef, reactive, shallowReactive, WatchStopHandle } from "vue";
 
-import { BattleOptions, Bot, StartPosType } from "@/model/battle/battle-types";
+import { BattleOptions, BattlePlayer, BattleSpectator, BattleUser, Bot } from "@/model/battle/battle-types";
 import { MapData } from "@/model/cache/map-data";
-import { User } from "@/model/user";
-import { StartBoxOrientation } from "@/utils/start-boxes";
+import { isBot, isPlayer } from "@/utils/type-checkers";
 
-export interface BattleConfig<T extends BattleOptions = BattleOptions> {
+export interface BattleConfig<T extends BattleOptions> {
     battleOptions: T;
     bots: Bot[];
-    users: User[];
+    users: BattleUser[];
 }
 
-export abstract class AbstractBattle<T extends BattleOptions = BattleOptions> {
+export function isBattle(battle: unknown): battle is AbstractBattle<BattleOptions> {
+    return battle instanceof AbstractBattle;
+}
+
+export abstract class AbstractBattle<T extends BattleOptions> {
     public readonly battleOptions: T; // this should probably be protected with getters exposed but not setters
     public readonly bots: Bot[];
-    public readonly users: User[];
+    public readonly users: BattleUser[];
 
     // helpers
-    public readonly participants: ComputedRef<Array<User | Bot>>;
-    public readonly contenders: ComputedRef<Array<User | Bot>>;
-    public readonly players: ComputedRef<Array<User>>;
-    public readonly spectators: ComputedRef<Array<User>>;
-    public readonly teams: ComputedRef<Map<number, Array<User | Bot>>>;
+    public readonly participants: ComputedRef<Array<BattleUser | Bot>>;
+    public readonly contenders: ComputedRef<Array<BattlePlayer | Bot>>;
+    public readonly players: ComputedRef<Array<BattlePlayer>>;
+    public readonly spectators: ComputedRef<Array<BattleSpectator>>;
+    public readonly teams: ComputedRef<Map<number, Array<BattlePlayer | Bot>>>;
     public readonly friendlyRuntime: ComputedRef<string | null>;
     public readonly runtimeMs: ComputedRef<number | null>;
     public readonly map: ComputedRef<MapData | undefined>;
@@ -38,9 +42,9 @@ export abstract class AbstractBattle<T extends BattleOptions = BattleOptions> {
         this.users = shallowReactive(config.users); // users are already reactive, so making them doubly reactive here will cause bugs
 
         this.participants = computed(() => [...this.users, ...this.bots]);
-        this.contenders = computed(() => this.participants.value.filter((participant) => ("userId" in participant ? !participant.battleStatus.isSpectator : true)));
-        this.players = computed(() => this.users.filter((user) => !user.battleStatus.isSpectator));
-        this.spectators = computed(() => this.users.filter((user) => user.battleStatus.isSpectator));
+        this.contenders = computed(() => this.participants.value.filter((participant): participant is BattlePlayer | Bot => isPlayer(participant) || isBot(participant)));
+        this.players = computed(() => this.users.filter((user): user is BattlePlayer => !user.battleStatus.isSpectator));
+        this.spectators = computed(() => this.users.filter((user): user is BattleSpectator => user.battleStatus.isSpectator));
         this.teams = computed(() => {
             const teams = groupBy(this.contenders.value, (player) => ("userId" in player ? player.battleStatus.teamId : player.teamId));
             const sortedTeams = new Map([...teams.entries()].sort());
@@ -70,25 +74,25 @@ export abstract class AbstractBattle<T extends BattleOptions = BattleOptions> {
         });
     }
 
-    public getTeamParticipants(teamId: number): Array<User | Bot> {
+    public getTeamParticipants(teamId: number): Array<TachyonUser | Bot> {
         return this.contenders.value.filter((contender) => ("userId" in contender ? contender.battleStatus.teamId === teamId : contender.teamId === teamId));
     }
 
-    public getParticipantByName(name: string): User | Bot | undefined {
-        return this.participants.value.find((participant) => {
-            const isBot = !("userId" in participant);
-            if (isBot) {
-                if (participant.name === name) {
-                    return true;
-                }
-            } else {
-                if (api.session.getUserById(participant.userId)?.username === name) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
+    // public getParticipantByName(name: string): TachyonUser | Bot | undefined {
+    //     return this.participants.value.find((participant) => {
+    //         const isBot = !("userId" in participant);
+    //         if (isBot) {
+    //             if (participant.name === name) {
+    //                 return true;
+    //             }
+    //         } else {
+    //             if (api.session.getTachyonUserById(participant.userId)?.username === name) {
+    //                 return true;
+    //             }
+    //         }
+    //         return false;
+    //     });
+    // }
 
     // Returns a bot by it's PlayerId. Returns undefined if not found..
     public getBotByPlayerId(playerId: number): Bot | undefined {
@@ -132,11 +136,11 @@ export abstract class AbstractBattle<T extends BattleOptions = BattleOptions> {
         ];
     }
 
-    public leave() {
-        for (const stopWatchHandle of this.watchStopHandles) {
-            stopWatchHandle();
-        }
-    }
+    // public leave() {
+    //     for (const stopWatchHandle of this.watchStopHandles) {
+    //         stopWatchHandle();
+    //     }
+    // }
 
     public abstract start(): void;
     public abstract setMap(map: string): void;
