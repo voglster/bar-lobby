@@ -1,14 +1,48 @@
 <template>
-    <div :class="[`matchmaking-queue-status`, { visible: queueing }]">Searching for a game <img :src="pulseAnim" /></div>
+    <div class="matchmaking-position">
+        <Transition name="slide-right">
+            <Card opaque v-if="queueing">
+                <div class="flex-col gap-sm">
+                    <div class="flex-row">
+                        <b>{{ queueState }}</b>
+                    </div>
+                    <div class="flex-row">Searching for a game...</div>
+                    <div class="flex-row gap-sm">
+                        <div v-for="(playlist, index) in queuedPlaylists" :key="index" class="flex-row">{{ playlist.name }}</div>
+                    </div>
+                </div>
+            </Card>
+        </Transition>
+    </div>
+    <!--<div :class="[`matchmaking-queue-status`, { visible: queueing }]">Searching for a game <img :src="pulseAnim" /></div>-->
 </template>
 
 <script lang="ts" setup>
 import pulseAnim from "@/assets/images/icons/pulse-anim.svg?url";
+import { computed } from "vue";
+import Card from "@/components/common/Card.vue";
 
-const queueing = api.session.searchingForGame;
+const queueing = computed(() => {
+    return api.session.matchmakingState.state.value != "none";
+});
+
+const queueState = computed(() => {
+    return api.session.matchmakingState.state.value;
+});
+
+const queuedPlaylists = computed(() => {
+    return api.session.matchmakingState.searchedPlaylists.value;
+});
 </script>
 
 <style lang="scss" scoped>
+.matchmaking-position {
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    z-index: 2;
+}
+
 .matchmaking-queue-status {
     background: #111;
     padding: 5px 10px;

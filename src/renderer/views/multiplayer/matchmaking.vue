@@ -12,7 +12,7 @@
                         <div class="flex-row flex-wrap gap-xl">
                             <Card
                                 :is-selected="selectedMode == 'ranked'"
-                                v-on:on-click="selectedMode != 'ranked' ? (selectedMode = 'ranked') : (selectedMode = 'none')"
+                                v-on:tap="selectedMode != 'ranked' ? (selectedMode = 'ranked') : (selectedMode = 'none')"
                                 class="card-height flex-grow"
                                 :background-img-url="rankedImage"
                                 style-type="cover"
@@ -22,7 +22,7 @@
                             </Card>
                             <Card
                                 :is-selected="selectedMode == 'casual'"
-                                v-on:on-click="selectedMode != 'casual' ? (selectedMode = 'casual') : (selectedMode = 'none')"
+                                v-on:tap="selectedMode != 'casual' ? (selectedMode = 'casual') : (selectedMode = 'none')"
                                 class="card-height flex-grow"
                                 :background-img-url="casualImage"
                                 style-type="cover"
@@ -32,7 +32,7 @@
                             </Card>
                             <Card
                                 :is-selected="selectedMode == 'co-op'"
-                                v-on:on-click="selectedMode != 'co-op' ? (selectedMode = 'co-op') : (selectedMode = 'none')"
+                                v-on:tap="selectedMode != 'co-op' ? (selectedMode = 'co-op') : (selectedMode = 'none')"
                                 class="card-height flex-grow"
                                 :background-img-url="raptorsImage"
                                 style-type="cover"
@@ -48,7 +48,7 @@
                                         v-for="(playlist, innerIndex) in activeQueueGroup.playLists"
                                         :key="innerIndex"
                                         :is-selected="selectedPlaylists.includes(playlist.key)"
-                                        v-on:on-click="onTapPlaylist(playlist.key)"
+                                        v-on:tap="onTapPlaylist(playlist.key)"
                                         >{{ playlist.name }}</Card
                                     >
                                 </TransitionGroup>

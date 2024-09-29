@@ -2,7 +2,7 @@
     <Card
         v-if="styleType == 'typical'"
         class="card-backing inset-content"
-        :class="{ selected: isSelected, disabled: disabled }"
+        :class="{ selected: isSelected, disabled: disabled, opaque: opaque }"
         @click="onClick"
     >
         <template #header v-if="headerImgUrl">
@@ -14,7 +14,12 @@
             <slot></slot>
         </template>
     </Card>
-    <Card v-else-if="styleType == 'cover'" class="card-backing" :class="{ selected: isSelected, disabled: disabled }" @click="onClick">
+    <Card
+        v-else-if="styleType == 'cover'"
+        class="card-backing"
+        :class="{ selected: isSelected, disabled: disabled, opaque: opaque }"
+        @click="onClick"
+    >
         <template #content>
             <img class="back-image" :src="backgroundImgUrl" />
             <div class="inset-content cover-content flex-col flex-justify-end">
@@ -39,22 +44,24 @@ const props = withDefaults(
         title?: string;
         subTitle?: string;
         disabled?: boolean;
+        opaque?: boolean;
         styleType?: "typical" | "cover";
     }>(),
     {
         isSelected: false,
         disabled: false,
+        opaque: false,
         styleType: "typical",
     }
 );
 
 const emit = defineEmits<{
-    (event: "on-click"): void;
+    (event: "tap"): void;
 }>();
 
 const onClick = (event) => {
     createRipple(event);
-    emit("on-click");
+    emit("tap");
 };
 
 const createRipple = (event) => {
@@ -113,6 +120,12 @@ const createRipple = (event) => {
     border: 3px solid rgba(255, 255, 255, 0.05) !important;
 }
 
+.opaque {
+    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.9)) !important;
+    backdrop-filter: blur(10px) brightness(1) saturate(2) !important;
+    border: 3px solid rgba(255, 255, 255, 0.05) !important;
+}
+
 .card-backing {
     position: relative;
     display: flex;
@@ -139,7 +152,7 @@ const createRipple = (event) => {
 }
 
 .inset-content {
-    padding: 20px;
+    padding: 10px;
 }
 
 .cover-content {
