@@ -1,4 +1,12 @@
-import { MatchmakingListOkResponseData, MatchmakingQueueOkResponse, MatchmakingQueueFailResponse, MatchmakingCancelOkResponse, MatchmakingCancelFailResponse } from "tachyon-protocol/types";
+import {
+    MatchmakingFoundUpdateEventData,
+    MatchmakingQueueUpdateEventData,
+    MatchmakingListOkResponseData,
+    MatchmakingQueueOkResponse,
+    MatchmakingQueueFailResponse,
+    MatchmakingCancelOkResponse,
+    MatchmakingCancelFailResponse,
+} from "tachyon-protocol/types";
 import { computed, ComputedRef, reactive, shallowReactive, WatchStopHandle, ref, Ref } from "vue";
 
 type MatchmakeState = "none" | "starting" | "searching" | "found" | "failed" | "leaving";
@@ -8,7 +16,7 @@ type Playlist = MatchmakingListOkResponseData["playlists"][0];
 export class MatchmakingStateStore {
     public readonly state: Ref<MatchmakeState>;
     public readonly searchTimeStart: Ref<Date>;
-    public readonly searchedPlaylists: Ref<Playlist>;
+    public readonly searchedPlaylists: Ref<Array<Playlist>>;
     public readonly failureMessage: Ref<string>;
 
     constructor() {
@@ -34,7 +42,16 @@ export class MatchmakingStateStore {
         }
     }
 
-    public onQueueUpdate() {}
+    public onEventQueueUpdate(data: MatchmakingQueueUpdateEventData) {}
+
+    public onEventFound(data: MatchmakingFoundUpdateEventData) {}
+
+    public onEventFoundUpdate(data: MatchmakingFoundUpdateEventData) {}
+
+    // Not implemented in tachyon protocol?
+    public onEventCancelled() {}
+
+    public onEventLost() {}
 
     private async joinQueue() {
         const queuesAsIds: Array<string> = [];
