@@ -27,6 +27,15 @@ export class MatchmakingStateStore {
         }
     }
 
+    public stopQueue() {
+        if (this.state.value != "none" && this.state.value != "leaving") {
+            this.setState("leaving");
+            this.leaveQueues();
+        }
+    }
+
+    public onQueueUpdate() {}
+
     private async joinQueue() {
         const queuesAsIds: Array<string> = [];
 
@@ -61,13 +70,6 @@ export class MatchmakingStateStore {
             if (failResponse.reason == "not_queued") {
                 this.setState("none");
             }
-        }
-    }
-
-    public stopQueue() {
-        if (this.state.value != "none" && this.state.value != "leaving") {
-            this.setState("leaving");
-            this.leaveQueues();
         }
     }
 
