@@ -4,73 +4,99 @@
 
 <template>
     <div class="flex-col gap-md flex-grow">
-        <h2>Modes</h2>
-        <Transition>
-            <div v-if="!fetchingPlaylists">
-                <div class="flex-row flex-wrap gap-xl">
-                    <Card
-                        :is-selected="selectedMode == 'ranked'"
-                        v-on:on-click="selectedMode != 'ranked' ? (selectedMode = 'ranked') : (selectedMode = 'none')"
-                        class="card-height flex-grow"
-                        :background-img-url="rankedImage"
-                        style-type="cover"
-                        title="Ranked"
-                    >
-                        <p>Compete in structured matches to earn points and improve your rank.</p>
-                    </Card>
-                    <Card
-                        :is-selected="selectedMode == 'casual'"
-                        v-on:on-click="selectedMode != 'casual' ? (selectedMode = 'casual') : (selectedMode = 'none')"
-                        class="card-height flex-grow"
-                        :background-img-url="casualImage"
-                        style-type="cover"
-                        title="Casual"
-                    >
-                        <p>Enjoy relaxed matches without pressure.</p>
-                    </Card>
-                    <Card
-                        :is-selected="selectedMode == 'co-op'"
-                        v-on:on-click="selectedMode != 'co-op' ? (selectedMode = 'co-op') : (selectedMode = 'none')"
-                        class="card-height flex-grow"
-                        :background-img-url="raptorsImage"
-                        style-type="cover"
-                        title="Co-op"
-                    >
-                        <p>Collaborate to defeat powerful robots & monsters.</p>
-                    </Card>
-                </div>
+        <Transition name="fade" mode="out-in">
+            <div v-if="!isMatchMaking" class="flex-col gap-md flex-grow">
+                <h2>Modes</h2>
                 <Transition>
-                    <div class="flex-row flex-wrap gap-md" v-if="activeQueueGroup != null">
-                        <TransitionGroup>
+                    <div v-if="!fetchingPlaylists">
+                        <div class="flex-row flex-wrap gap-xl">
                             <Card
-                                v-for="(playlist, innerIndex) in activeQueueGroup.playLists"
-                                :key="innerIndex"
-                                :is-selected="selectedPlaylists.includes(playlist.key)"
-                                v-on:on-click="onTapPlaylist(playlist.key)"
-                                >{{ playlist.name }}</Card
+                                :is-selected="selectedMode == 'ranked'"
+                                v-on:on-click="selectedMode != 'ranked' ? (selectedMode = 'ranked') : (selectedMode = 'none')"
+                                class="card-height flex-grow"
+                                :background-img-url="rankedImage"
+                                style-type="cover"
+                                title="Ranked"
                             >
-                        </TransitionGroup>
-                    </div>
-                </Transition>
-                <div class="flex-row">
-                    <div class="flex-col flex-2">
+                                <p>Compete in structured matches to earn points and improve your rank.</p>
+                            </Card>
+                            <Card
+                                :is-selected="selectedMode == 'casual'"
+                                v-on:on-click="selectedMode != 'casual' ? (selectedMode = 'casual') : (selectedMode = 'none')"
+                                class="card-height flex-grow"
+                                :background-img-url="casualImage"
+                                style-type="cover"
+                                title="Casual"
+                            >
+                                <p>Enjoy relaxed matches without pressure.</p>
+                            </Card>
+                            <Card
+                                :is-selected="selectedMode == 'co-op'"
+                                v-on:on-click="selectedMode != 'co-op' ? (selectedMode = 'co-op') : (selectedMode = 'none')"
+                                class="card-height flex-grow"
+                                :background-img-url="raptorsImage"
+                                style-type="cover"
+                                title="Co-op"
+                            >
+                                <p>Collaborate to defeat powerful robots & monsters.</p>
+                            </Card>
+                        </div>
                         <Transition>
-                            <div v-if="activeDescription" class="flex-row flex-grow">
-                                {{ activeDescription.description }}
+                            <div class="flex-row flex-wrap gap-md" v-if="activeQueueGroup != null">
+                                <TransitionGroup>
+                                    <Card
+                                        v-for="(playlist, innerIndex) in activeQueueGroup.playLists"
+                                        :key="innerIndex"
+                                        :is-selected="selectedPlaylists.includes(playlist.key)"
+                                        v-on:on-click="onTapPlaylist(playlist.key)"
+                                        >{{ playlist.name }}</Card
+                                    >
+                                </TransitionGroup>
                             </div>
                         </Transition>
+                        <div class="flex-row">
+                            <div class="flex-col flex-2">
+                                <Transition>
+                                    <div v-if="activeDescription" class="flex-row flex-grow">
+                                        {{ activeDescription.description }}
+                                    </div>
+                                </Transition>
+                            </div>
+                            <div class="flex-col flex-1"></div>
+                        </div>
+                        <div class="flex-row">
+                            <div v-if="activeDescription" class="flex-row flex-grow"></div>
+                        </div>
                     </div>
-                    <div class="flex-col flex-1"></div>
-                </div>
-                <div class="flex-row">
-                    <div v-if="activeDescription" class="flex-row flex-grow"></div>
+                    <div v-else><Loader /></div>
+                </Transition>
+                <div class="flex-row flex-grow flex-align-end flex-justify-end">
+                    <h4><Card @click="onTapQueue" :disabled="actualSelectedPlaylistIds.length == 0">Play</Card></h4>
                 </div>
             </div>
-            <div v-else><Loader /></div>
+            <div v-else class="flex-col gap-md flex-grow flex-center-content">
+                <div></div>
+                <div class="flex-row flex-center-content">
+                    <div class="flex-col gap-lg">
+                        <div class="flex-row flex-center-content">
+                            <h5>Searching...</h5>
+                        </div>
+                        <div class="flex-row flex-center-content gap-lg">
+                            <Card v-for="(playlist, index) in queuedPlaylists" :key="index">{{ playlist.name }}</Card>
+                        </div>
+                        <div class="flex-row flex-center-content">
+                            <Loader :absolutePosition="false" />
+                        </div>
+                        <div class="flex-row flex-center-content">
+                            <p>Queue time : {{ displayedTimeSearching }}</p>
+                        </div>
+                        <div class="flex-row flex-center-content">
+                            <Button @click="onTapStopQueue">Stop</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </Transition>
-        <div class="flex-row flex-grow flex-align-end flex-justify-end">
-            <h4><Card @click="onTapQueue" :disabled="actualSelectedPlaylists.length == 0">Play</Card></h4>
-        </div>
     </div>
 </template>
 
@@ -78,12 +104,13 @@
 import rankedImage from "@/assets/images/backgrounds/1.png";
 import casualImage from "@/assets/images/backgrounds/2.jpg";
 import raptorsImage from "@/assets/images/backgrounds/3.png";
-import { MatchmakingListOkResponse } from "tachyon-protocol/types";
+import { MatchmakingListOkResponse, MatchmakingListOkResponseData } from "tachyon-protocol/types";
 import Loader from "@/components/common/Loader.vue";
 
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 
 import Card from "@/components/common/Card.vue";
+import Button from "@/components/controls/Button.vue";
 
 interface PlaylistGroup {
     identifier: "none" | "ranked" | "casual" | "co-op";
@@ -95,11 +122,16 @@ interface PlayListGroupItem {
     name: string;
 }
 
+type PlaylistInfo = MatchmakingListOkResponseData["playlists"][0];
+
 const selectedMode = ref<"none" | "ranked" | "casual" | "co-op">("none");
 const playlistGroups = ref<Array<PlaylistGroup>>([] as Array<PlaylistGroup>);
 const selectedPlaylists = ref<Array<string>>([] as Array<string>);
 const fetchingPlaylists = ref<boolean>(true);
-const actualPlaylists = ref<Array<string>>([] as Array<string>);
+const actualPlaylists = ref<Array<PlaylistInfo>>([] as Array<PlaylistInfo>);
+const displayedTimeSearching = ref<String>("");
+
+let timerUpdateId: number;
 
 const modeDescriptions = [
     {
@@ -124,6 +156,13 @@ const modeDescriptions = [
 ];
 
 onMounted(async () => {
+    timerUpdateId = window.setInterval(updateSearchTime, 500);
+    updateSearchTime();
+    await fetchLatestQueues();
+});
+
+onUnmounted(async () => {
+    clearInterval(timerUpdateId);
     await fetchLatestQueues();
 });
 
@@ -143,7 +182,7 @@ const fetchLatestQueues = async () => {
     if (listResponse.status === "success") {
         // For now until we can perhaps get some categorization of playlists, assume they all exist in the ranked or casual based on ranked
         listResponse.data.playlists.forEach((playList) => {
-            actualPlaylists.value.push(playList.id);
+            actualPlaylists.value.push(playList);
             if (playList.ranked) {
                 rankedPlaylistGroup.playLists.push({ key: playList.id, name: playList.name });
             } else {
@@ -190,14 +229,54 @@ const onTapPlaylist = (playList) => {
     index === -1 ? selectedPlaylists.value.push(playList) : selectedPlaylists.value.splice(index, 1);
 };
 
-const onTapQueue = () => {};
+const onTapQueue = () => {
+    api.session.matchmakingState.startQueue(actualSelectedPlaylists.value);
+};
+
+const onTapStopQueue = () => {
+    api.session.matchmakingState.stopQueue();
+};
+
+const updateSearchTime = () => {
+    // Bail if no current state;
+    if (api.session.matchmakingState.state.value == "none") return;
+
+    // Get the difference in milliseconds
+    const curTime = new Date();
+
+    const diffInMs = Math.abs(curTime.getTime() - api.session.matchmakingState.searchTimeStart.value.getTime());
+
+    const diffInSeconds = diffInMs / 1000;
+
+    // Get minutes and seconds
+    const minutes = Math.floor(diffInSeconds / 60);
+    const seconds = Math.round(diffInSeconds % 60);
+
+    // Pad minutes and seconds with leading zero if necessary
+    const formattedMinutes = String(minutes).padStart(2, "0");
+    const formattedSeconds = String(seconds).padStart(2, "0");
+
+    displayedTimeSearching.value = `${formattedMinutes}:${formattedSeconds}`;
+};
 
 watch(selectedMode, () => {
     selectedPlaylists.value.splice(0);
 });
 
+const isMatchMaking = computed(() => {
+    return api.session.matchmakingState.state.value != "none";
+});
+
+const queuedPlaylists = computed(() => {
+    return api.session.matchmakingState.searchedPlaylists.value;
+});
+
+const actualSelectedPlaylistIds = computed(() => {
+    return selectedPlaylists.value.filter((playlist) => actualPlaylists.value.some((fetchedPlaylist) => fetchedPlaylist.id == playlist));
+});
+
 const actualSelectedPlaylists = computed(() => {
-    return selectedPlaylists.value.filter((playlist) => actualPlaylists.value.includes(playlist));
+    return actualPlaylists.value.filter((playlist) => selectedPlaylists.value.includes(playlist.id));
 });
 
 const activeQueueGroup = computed(() => {
@@ -206,6 +285,10 @@ const activeQueueGroup = computed(() => {
 
 const activeDescription = computed(() => {
     return modeDescriptions.find((group) => group.mode == selectedMode.value);
+});
+
+watch(isMatchMaking, (newVal: boolean) => {
+    if (newVal) updateSearchTime();
 });
 </script>
 

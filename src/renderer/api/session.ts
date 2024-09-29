@@ -3,6 +3,7 @@ import { GetCommandData, GetCommands } from "tachyon-protocol";
 import { PrivateUser, User } from "tachyon-protocol/types";
 import { computed, ComputedRef, reactive, Ref, ref, shallowReactive, shallowRef } from "vue";
 
+import { MatchmakingStateStore } from "@/model/matchmaking/matchmakingstate";
 import { MatchmakingBattle } from "@/model/battle/matchmaking-battle";
 import { OfflineCustomBattle } from "@/model/battle/offline-custom-battle";
 import { OnlineCustomBattle } from "@/model/battle/online-custom-battle";
@@ -25,6 +26,7 @@ export class SessionAPI {
     public readonly directMessages: Map<number, Message[]> = reactive(new Map());
     public readonly searchingForGame = ref(false);
     public readonly bearerToken = ref("");
+    public readonly matchmakingState: MatchmakingStateStore;
 
     constructor() {
         // TODO: should be in this.clear()?
@@ -36,6 +38,7 @@ export class SessionAPI {
         this.battleMessages.length = 0;
         this.serverStats.value = null;
         this.directMessages.clear();
+        this.matchmakingState = new MatchmakingStateStore();
 
         const user: PrivateUser = {
             userId: "",
