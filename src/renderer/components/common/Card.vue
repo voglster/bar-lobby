@@ -1,5 +1,10 @@
 <template>
-    <Card v-if="styleType == 'typical'" :class="'card-backing inset-content' + (isSelected ? ' selected' : '')" @click="onClick">
+    <Card
+        v-if="styleType == 'typical'"
+        class="card-backing inset-content"
+        :class="{ selected: isSelected, disabled: disabled }"
+        @click="onClick"
+    >
         <template #header v-if="headerImgUrl">
             <img alt="user header" :src="headerImgUrl" />
         </template>
@@ -9,7 +14,7 @@
             <slot></slot>
         </template>
     </Card>
-    <Card v-else-if="styleType == 'cover'" :class="'card-backing' + (isSelected ? ' selected' : '')" @click="onClick">
+    <Card v-else-if="styleType == 'cover'" class="card-backing" :class="{ selected: isSelected, disabled: disabled }" @click="onClick">
         <template #content>
             <img class="back-image" :src="backgroundImgUrl" />
             <div class="inset-content cover-content flex-col flex-justify-end">
@@ -28,15 +33,17 @@ import Card from "primevue/card";
 
 const props = withDefaults(
     defineProps<{
-        isSelected: boolean;
+        isSelected?: boolean;
         headerImgUrl?: string;
         backgroundImgUrl?: string;
         title?: string;
         subTitle?: string;
-        styleType: "typical" | "cover";
+        disabled?: boolean;
+        styleType?: "typical" | "cover";
     }>(),
     {
         isSelected: false,
+        disabled: false,
         styleType: "typical",
     }
 );
@@ -96,6 +103,14 @@ const createRipple = (event) => {
     object-fit: cover;
     z-index: -1;
     padding: 4px;
+}
+
+.disabled {
+    color: gray !important;
+    pointer-events: none !important;
+    background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)) !important;
+    backdrop-filter: blur(10px) brightness(0) saturate(0) !important;
+    border: 3px solid rgba(255, 255, 255, 0.05) !important;
 }
 
 .card-backing {
