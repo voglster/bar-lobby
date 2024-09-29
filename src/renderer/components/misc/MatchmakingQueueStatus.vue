@@ -10,6 +10,12 @@
                     <div class="flex-row gap-sm">
                         <div v-for="(playlist, index) in queuedPlaylists" :key="index" class="flex-row">{{ playlist.name }}</div>
                     </div>
+                    <div class="flex-row">
+                        <div v-if="usersInQueue">{{ usersInQueue }} users in queue.</div>
+                    </div>
+                    <div class="flex-row">
+                        <div v-if="readyCount">{{ readyCount }} / {{ maxReadyCount }} Ready.</div>
+                    </div>
                 </div>
             </Card>
         </Transition>
@@ -32,6 +38,18 @@ const queueState = computed(() => {
 
 const queuedPlaylists = computed(() => {
     return api.session.matchmakingState.searchedPlaylists.value;
+});
+
+const usersInQueue = computed(() => {
+    return api.session.matchmakingState.usersInMyQueue.value;
+});
+
+const readyCount = computed(() => {
+    return api.session.matchmakingState.usersReadyInFoundGroup.value;
+});
+
+const maxReadyCount = computed(() => {
+    return api.session.matchmakingState.maxReadyCount.value;
 });
 </script>
 

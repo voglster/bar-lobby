@@ -1,4 +1,6 @@
 import {
+    BattleStartRequestData,
+    MatchmakingFoundEventData,
     MatchmakingFoundUpdateEventData,
     MatchmakingQueueUpdateEventData,
     MatchmakingListOkResponseData,
@@ -9,7 +11,7 @@ import {
 } from "tachyon-protocol/types";
 import { computed, ComputedRef, reactive, shallowReactive, WatchStopHandle, ref, Ref } from "vue";
 
-type MatchmakeState = "none" | "starting" | "searching" | "found" | "failed" | "leaving";
+type MatchmakeState = "none" | "starting" | "searching" | "found" | "battle-starting" | "failed" | "leaving";
 
 type Playlist = MatchmakingListOkResponseData["playlists"][0];
 
@@ -18,12 +20,20 @@ export class MatchmakingStateStore {
     public readonly searchTimeStart: Ref<Date>;
     public readonly searchedPlaylists: Ref<Array<Playlist>>;
     public readonly failureMessage: Ref<string>;
+    public readonly usersInMyQueue: Ref<string | null>;
+    public readonly usersReadyInFoundGroup: Ref<number | null>;
+    public readonly foundPlaylistId: Ref<string | null>;
+    public readonly maxReadyCount: Ref<number | null>;
 
     constructor() {
         this.state = ref<MatchmakeState>("none");
         this.searchTimeStart = ref(new Date());
         this.searchedPlaylists = ref([] as Array<Playlist>);
         this.failureMessage = ref("");
+        this.usersInMyQueue = ref(null);
+        this.usersReadyInFoundGroup = ref(null);
+        this.foundPlaylistId = ref(null);
+        this.maxReadyCount = ref(null);
     }
 
     // Starts matchmaking against the given set of playlists
@@ -32,6 +42,8 @@ export class MatchmakingStateStore {
             this.setState("starting");
             this.searchedPlaylists.value = playlists;
             this.joinQueue();
+            //Disableed for commit, needs more work and we need to do some more front end
+            //this.emulateFindGameToReadyToStart();
         }
     }
 
@@ -42,16 +54,81 @@ export class MatchmakingStateStore {
         }
     }
 
-    public onEventQueueUpdate(data: MatchmakingQueueUpdateEventData) {}
+    public onEventQueueUpdate(data: MatchmakingQueueUpdateEventData) {
+        console.log("EVENT - Queue update", data);
+        this.usersInMyQueue.value = data.playersQueued;
+    }
 
-    public onEventFound(data: MatchmakingFoundUpdateEventData) {}
+    public onEventFound(data: MatchmakingFoundEventData) {
+        console.log("EVENT - Found", data);
+        this.foundPlaylistId.value = data.queueId;
 
-    public onEventFoundUpdate(data: MatchmakingFoundUpdateEventData) {}
+        const foundPlaylist = this.searchedPlaylists.value.find((searchedPlaylist) => searchedPlaylist.id == data.queueId);
+        if (foundPlaylist != null) {
+            this.maxReadyCount.value = foundPlaylist.numOfTeams * foundPlaylist.teamSize;
+        }
+
+        this.setState("found");
+    }
+
+    public onEventFoundUpdate(data: MatchmakingFoundUpdateEventData) {
+        console.log("EVENT - Found update", data);
+        this.usersReadyInFoundGroup.value = data.readyCount;
+        this.setState("found");
+    }
 
     // Not implemented in tachyon protocol?
-    public onEventCancelled() {}
+    public onEventCancelled() {
+        console.log("EVENT - Cancelled");
+        this.setState("none");
+    }
 
-    public onEventLost() {}
+    public onEventLost() {
+        console.log("EVENT - Lost");
+        this.usersReadyInFoundGroup.value = null;
+        this.setState("searching");
+    }
+
+    public onEventStartBattle(data: BattleStartRequestData) {
+        console.log("EVENT - Start Battle");
+        this.setState("battle-starting");
+    }
+
+    private async emulateFindGameToReadyToStart() {
+        console.log("STARTING AN EMULATED MATCHMAKING EXPERIENCE, WHAT YOU SEE WILL NOT BE REAL!");
+        await new Promise((r) => setTimeout(r, 5000));
+
+        //We recieve an event of how big our queue is
+        this.onEventQueueUpdate({ playersQueued: "1337" });
+        await new Promise((r) => setTimeout(r, 5000));
+
+        //We recieve an event of a match being found
+        this.onEventFound({ queueId: "1v1", timeoutMs: 400000 });
+
+        await new Promise((r) => setTimeout(r, 5000));
+
+        //Presumably we then recieve an update event about this found situation
+        this.onEventFoundUpdate({ readyCount: 1 });
+
+        await new Promise((r) => setTimeout(r, 1000));
+
+        //More people ready up
+        this.onEventFoundUpdate({ readyCount: 2 });
+        await new Promise((r) => setTimeout(r, 1000));
+        this.onEventFoundUpdate({ readyCount: 3 });
+        await new Promise((r) => setTimeout(r, 1000));
+        this.onEventFoundUpdate({ readyCount: 4 });
+        await new Promise((r) => setTimeout(r, 1000));
+
+        //We then get the request for us to then start the battle! Huzzah!
+        this.onEventStartBattle({ username: "Ut in", password: "Ut in", ip: "Ut in", port: -57999999.99999999 });
+    }
+
+    private resetMatchmakingStats() {
+        this.usersInMyQueue.value = null;
+        this.usersReadyInFoundGroup.value = null;
+        this.maxReadyCount.value = null;
+    }
 
     private async joinQueue() {
         const queuesAsIds: Array<string> = [];
@@ -94,6 +171,8 @@ export class MatchmakingStateStore {
     private setState(newState: MatchmakeState) {
         if (newState == "searching") {
             this.searchTimeStart.value = new Date();
+        } else if (newState == "none") {
+            this.resetMatchmakingStats();
         }
 
         console.log("Moving matchmaking state to: ", newState);

@@ -33,24 +33,19 @@ export class CommsAPI extends TachyonClient<"user"> {
             },
             eventHandlers: {
                 "matchmaking/queueUpdate": async (data) => {
-                    console.log("EVENT - Queue update");
                     api.session.matchmakingState.onEventQueueUpdate(data);
                 },
                 "matchmaking/found": async (data) => {
-                    console.log("EVENT - Found");
                     api.session.matchmakingState.onEventFound(data);
                 },
                 "matchmaking/foundUpdate": async (data) => {
-                    console.log("EVENT - Found update");
                     api.session.matchmakingState.onEventFoundUpdate(data);
                 },
                 "matchmaking/cancelled": async (data) => {
                     // Not implemented?
-                    console.log("EVENT - Cancelled");
                     api.session.matchmakingState.onEventCancelled();
                 },
                 "matchmaking/lost": async (data) => {
-                    console.log("EVENT - Lost");
                     api.session.matchmakingState.onEventLost();
                 },
             },
