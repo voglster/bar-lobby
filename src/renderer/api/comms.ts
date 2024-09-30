@@ -42,7 +42,6 @@ export class CommsAPI extends TachyonClient<"user"> {
                     api.session.matchmakingState.onEventFoundUpdate(data);
                 },
                 "matchmaking/cancelled": async (data) => {
-                    // Not implemented?
                     api.session.matchmakingState.onEventCancelled();
                 },
                 "matchmaking/lost": async (data) => {

@@ -8,10 +8,12 @@ import {
     MatchmakingQueueFailResponse,
     MatchmakingCancelOkResponse,
     MatchmakingCancelFailResponse,
+    MatchmakingReadyOkResponse,
+    MatchmakingReadyFailResponse,
 } from "tachyon-protocol/types";
 import { computed, ComputedRef, reactive, shallowReactive, WatchStopHandle, ref, Ref } from "vue";
 
-type MatchmakeState = "none" | "starting" | "searching" | "found" | "battle-starting" | "failed" | "leaving";
+type MatchmakeState = "none" | "starting" | "searching" | "found" | "readied" | "battle-starting" | "failed" | "leaving";
 
 type Playlist = MatchmakingListOkResponseData["playlists"][0];
 
@@ -50,8 +52,16 @@ export class MatchmakingStateStore {
     public stopQueue() {
         if (this.state.value != "none" && this.state.value != "leaving") {
             this.setState("leaving");
-            this.leaveQueues();
+            this.leaveQueuesAndFoundMatch();
         }
+    }
+
+    public cancelReadyUp() {
+        this.leaveQueuesAndFoundMatch();
+    }
+
+    public readyUp() {
+        this.readyUpRequest();
     }
 
     public onEventQueueUpdate(data: MatchmakingQueueUpdateEventData) {
@@ -62,6 +72,8 @@ export class MatchmakingStateStore {
     public onEventFound(data: MatchmakingFoundEventData) {
         console.log("EVENT - Found", data);
         this.foundPlaylistId.value = data.queueId;
+
+        console.log("Checking playerlists", this.searchedPlaylists);
 
         const foundPlaylist = this.searchedPlaylists.value.find((searchedPlaylist) => searchedPlaylist.id == data.queueId);
         if (foundPlaylist != null) {
@@ -74,7 +86,6 @@ export class MatchmakingStateStore {
     public onEventFoundUpdate(data: MatchmakingFoundUpdateEventData) {
         console.log("EVENT - Found update", data);
         this.usersReadyInFoundGroup.value = data.readyCount;
-        this.setState("found");
     }
 
     // Not implemented in tachyon protocol?
@@ -96,15 +107,15 @@ export class MatchmakingStateStore {
 
     private async emulateFindGameToReadyToStart() {
         console.log("STARTING AN EMULATED MATCHMAKING EXPERIENCE, WHAT YOU SEE WILL NOT BE REAL!");
-        await new Promise((r) => setTimeout(r, 5000));
+        await new Promise((r) => setTimeout(r, 1000));
 
         //We recieve an event of how big our queue is
         this.onEventQueueUpdate({ playersQueued: "1337" });
-        await new Promise((r) => setTimeout(r, 5000));
+        await new Promise((r) => setTimeout(r, 15000));
 
         //We recieve an event of a match being found
-        this.onEventFound({ queueId: "1v1", timeoutMs: 400000 });
-
+        this.onEventFound({ queueId: "2v2", timeoutMs: 400000 });
+        this.onEventFoundUpdate({ readyCount: 0 });
         await new Promise((r) => setTimeout(r, 5000));
 
         //Presumably we then recieve an update event about this found situation
@@ -117,11 +128,9 @@ export class MatchmakingStateStore {
         await new Promise((r) => setTimeout(r, 1000));
         this.onEventFoundUpdate({ readyCount: 3 });
         await new Promise((r) => setTimeout(r, 1000));
-        this.onEventFoundUpdate({ readyCount: 4 });
-        await new Promise((r) => setTimeout(r, 1000));
 
         //We then get the request for us to then start the battle! Huzzah!
-        this.onEventStartBattle({ username: "Ut in", password: "Ut in", ip: "Ut in", port: -57999999.99999999 });
+        //this.onEventStartBattle({ username: "Ut in", password: "Ut in", ip: "Ut in", port: -57999999.99999999 });
     }
 
     private resetMatchmakingStats() {
@@ -151,7 +160,20 @@ export class MatchmakingStateStore {
         }
     }
 
-    private async leaveQueues() {
+    private async readyUpRequest() {
+        const cancelResponse: MatchmakingReadyOkResponse | MatchmakingReadyFailResponse = await api.comms.request("matchmaking/ready");
+
+        if (cancelResponse.status == "success") {
+            const okResponse = cancelResponse as MatchmakingReadyOkResponse;
+            this.setState("readied");
+        } else {
+            const failResponse = cancelResponse as MatchmakingReadyFailResponse;
+            this.failureMessage.value = failResponse.reason;
+            this.setState("readied");
+        }
+    }
+
+    private async leaveQueuesAndFoundMatch() {
         const cancelResponse: MatchmakingCancelOkResponse | MatchmakingCancelFailResponse = await api.comms.request("matchmaking/cancel");
 
         if (cancelResponse.status == "success") {

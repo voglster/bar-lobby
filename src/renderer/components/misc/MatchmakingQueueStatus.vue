@@ -1,32 +1,65 @@
 <template>
-    <div class="matchmaking-position">
-        <Transition name="slide-right">
-            <Card opaque v-if="queueing">
-                <div class="flex-col gap-sm">
-                    <div class="flex-row">
-                        <b>{{ queueState }}</b>
+    <div>
+        <div class="matchmaking-position">
+            <Transition name="slide-right">
+                <Card opaque v-if="queueing">
+                    <div class="flex-col gap-sm">
+                        <div class="flex-row">
+                            <b>{{ queueState }}</b>
+                        </div>
+                        <div class="flex-row gap-sm">
+                            <div v-for="(playlist, index) in queuedPlaylists" :key="index" class="flex-row">{{ playlist.name }}</div>
+                        </div>
+                        <div class="flex-row">
+                            <div v-if="usersInQueue">{{ usersInQueue }} users in queue.</div>
+                        </div>
                     </div>
-                    <div class="flex-row">Searching for a game...</div>
-                    <div class="flex-row gap-sm">
-                        <div v-for="(playlist, index) in queuedPlaylists" :key="index" class="flex-row">{{ playlist.name }}</div>
-                    </div>
-                    <div class="flex-row">
-                        <div v-if="usersInQueue">{{ usersInQueue }} users in queue.</div>
-                    </div>
-                    <div class="flex-row">
-                        <div v-if="readyCount">{{ readyCount }} / {{ maxReadyCount }} Ready.</div>
-                    </div>
+                </Card>
+            </Transition>
+        </div>
+        <Modal v-model="showReadyUpModal" title="Match Found" :persistent="true" @open="onOpen">
+            <div class="flex-col gap-md modal-size">
+                <div class="flex-row flex-right">{{ readyCount }} / {{ maxReadyCount }} Players ready</div>
+                <div class="flex-row gap-lg flex-center-content">
+                    <Card class="playerReadyIcon" v-for="n in maxReadyCount" :key="n">
+                        <Icon :icon="readyAvatar" height="100%" :color="readyCount < n ? 'white' : 'green'" />
+                    </Card>
                 </div>
-            </Card>
-        </Transition>
+                <div v-if="!hasPlayerReadied" class="flex-row">Please ready up! {{ "$$" }} seconds left.</div>
+                <div class="flex-row gap-md">
+                    <Card @tap="onTapCancel" class="flex-grow flex-center-content">Cancel </Card>
+                    <Card @tap="onTapReady" class="flex-grow flex-4 flex-center-content">Ready </Card>
+                </div>
+            </div>
+        </Modal>
     </div>
-    <!--<div :class="[`matchmaking-queue-status`, { visible: queueing }]">Searching for a game <img :src="pulseAnim" /></div>-->
 </template>
 
 <script lang="ts" setup>
 import pulseAnim from "@/assets/images/icons/pulse-anim.svg?url";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import Card from "@/components/common/Card.vue";
+import Modal from "@/components/common/Modal.vue";
+import readyAvatar from "@iconify-icons/mdi/human-greeting-variant";
+import { Icon } from "@iconify/vue";
+
+const onOpen = () => {};
+
+const onTapCancel = () => {
+    api.session.matchmakingState.cancelReadyUp();
+};
+
+const onTapReady = () => {
+    api.session.matchmakingState.readyUp();
+};
+
+const showReadyUpModal = computed(() => {
+    return api.session.matchmakingState.state.value == "found" || api.session.matchmakingState.state.value == "readied";
+});
+
+const hasPlayerReadied = computed(() => {
+    return api.session.matchmakingState.state.value == "readied";
+});
 
 const queueing = computed(() => {
     return api.session.matchmakingState.state.value != "none";
@@ -45,7 +78,8 @@ const usersInQueue = computed(() => {
 });
 
 const readyCount = computed(() => {
-    return api.session.matchmakingState.usersReadyInFoundGroup.value;
+    if (api.session.matchmakingState.usersReadyInFoundGroup == null) return 0;
+    else return api.session.matchmakingState.usersReadyInFoundGroup.value as number;
 });
 
 const maxReadyCount = computed(() => {
@@ -61,22 +95,12 @@ const maxReadyCount = computed(() => {
     z-index: 2;
 }
 
-.matchmaking-queue-status {
-    background: #111;
-    padding: 5px 10px;
-    position: absolute;
-    top: 10px;
-    right: 0;
-    z-index: 2;
-    transform: translateX(100%);
-    transition: transform 0.2s;
-    &.visible {
-        transform: translateX(0%);
-    }
+.modal-size {
+    min-width: 200px;
 }
-.searching-loader {
-    position: absolute;
-    top: 0;
-    right: 0;
+
+.playerReadyIcon {
+    width: 80px;
+    height: 80px;
 }
 </style>

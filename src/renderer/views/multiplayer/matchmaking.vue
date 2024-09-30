@@ -81,6 +81,9 @@
                         <div class="flex-row flex-center-content">
                             <h5>Searching...</h5>
                         </div>
+                        <div class="flex-row flex-center-content">
+                            <div v-if="usersInQueue">{{ usersInQueue }} users in queue.</div>
+                        </div>
                         <div class="flex-row flex-center-content gap-lg">
                             <Card v-for="(playlist, index) in queuedPlaylists" :key="index">{{ playlist.name }}</Card>
                         </div>
@@ -285,6 +288,10 @@ const activeQueueGroup = computed(() => {
 
 const activeDescription = computed(() => {
     return modeDescriptions.find((group) => group.mode == selectedMode.value);
+});
+
+const usersInQueue = computed(() => {
+    return api.session.matchmakingState.usersInMyQueue.value;
 });
 
 watch(isMatchMaking, (newVal: boolean) => {
