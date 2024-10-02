@@ -67,6 +67,8 @@ async function connect() {
         // TODO: store token
         api.session.bearerToken.value = oauthToken.accessToken;
 
+        console.log("Access token is", oauthToken.accessToken);
+
         await api.comms.connect(oauthToken.accessToken);
 
         // Not implemented yet

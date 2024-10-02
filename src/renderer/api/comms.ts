@@ -31,6 +31,23 @@ export class CommsAPI extends TachyonClient<"user"> {
                     };
                 },
             },
+            eventHandlers: {
+                "matchmaking/queueUpdate": async (data) => {
+                    api.session.matchmakingState.onEventQueueUpdate(data);
+                },
+                "matchmaking/found": async (data) => {
+                    api.session.matchmakingState.onEventFound(data);
+                },
+                "matchmaking/foundUpdate": async (data) => {
+                    api.session.matchmakingState.onEventFoundUpdate(data);
+                },
+                "matchmaking/cancelled": async (data) => {
+                    api.session.matchmakingState.onEventCancelled();
+                },
+                "matchmaking/lost": async (data) => {
+                    api.session.matchmakingState.onEventLost();
+                },
+            },
         });
 
         // this.onResponse.add((responseCommand: GenericResponseCommand) => {

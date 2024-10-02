@@ -1,5 +1,5 @@
 <route lang="json5">
-{ meta: { title: "Ranked", order: 0, devOnly: true, availableOffline: false, transition: { name: "slide-left" } } }
+{ meta: { title: "Ranked", order: 1, devOnly: true, availableOffline: false, transition: { name: "slide-left" } } }
 </route>
 
 <template>
@@ -41,7 +41,7 @@
 // - Players who abandon are punished in some way, lower reputation, banned from matchmaking for x time or something
 
 import { MatchmakingListOkResponseData } from "tachyon-protocol/types";
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 
 import Button from "@/components/controls/Button.vue";
 
@@ -53,12 +53,14 @@ const playlists = reactive<MatchmatchPlaylist[]>([]);
 const selectedPlaylistIds = reactive<Set<string>>(new Set());
 const queueing = ref(false);
 
-const listResponse = await api.comms.request("matchmaking/list");
+onMounted(async () => {
+    const listResponse = await api.comms.request("matchmaking/list");
 
-if (listResponse.status === "success") {
-    playlists.length = 0;
-    playlists.push(...listResponse.data.playlists);
-}
+    if (listResponse.status === "success") {
+        playlists.length = 0;
+        playlists.push(...listResponse.data.playlists);
+    }
+});
 
 function toggleCheck(playlistId: string) {
     if (selectedPlaylistIds.has(playlistId)) {

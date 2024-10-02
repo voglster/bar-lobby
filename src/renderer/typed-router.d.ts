@@ -51,6 +51,7 @@ declare module 'vue-router/auto-routes' {
     '/multiplayer/battle': RouteRecordInfo<'/multiplayer/battle', '/multiplayer/battle', Record<never, never>, Record<never, never>>,
     '/multiplayer/casual': RouteRecordInfo<'/multiplayer/casual', '/multiplayer/casual', Record<never, never>, Record<never, never>>,
     '/multiplayer/custom': RouteRecordInfo<'/multiplayer/custom', '/multiplayer/custom', Record<never, never>, Record<never, never>>,
+    '/multiplayer/matchmaking': RouteRecordInfo<'/multiplayer/matchmaking', '/multiplayer/matchmaking', Record<never, never>, Record<never, never>>,
     '/multiplayer/ranked': RouteRecordInfo<'/multiplayer/ranked', '/multiplayer/ranked', Record<never, never>, Record<never, never>>,
     '/multiplayer/tournaments': RouteRecordInfo<'/multiplayer/tournaments', '/multiplayer/tournaments', Record<never, never>, Record<never, never>>,
     '/profile/': RouteRecordInfo<'/profile/', '/profile', Record<never, never>, Record<never, never>>,
