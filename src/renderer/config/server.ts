@@ -2,6 +2,7 @@
 export const serverConfig = {
     // host: "server4.beyondallreason.info",
     // port: 8202,
-    host: "server5.beyondallreason.info",
-    ssl: true,
+    host: "127.0.0.1",
+    port: 4000,
+    ssl: false,
 };
